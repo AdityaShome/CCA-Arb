@@ -1,0 +1,17 @@
+GUIDE.md
+
+# third-party clones
+third_party/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Experiment outputs
+logs/
+runs/
+*.jsonl
