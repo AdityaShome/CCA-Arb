@@ -1,0 +1,13 @@
+# Plumbing check with mock agents on real tau-bench state. NOT a research result.
+run: {name: dev_mock, seeds: [0], task_ids: [0, 1, 2, 3, 4], max_steps: 30}
+env: {domain: retail, split: dev, user: scripted}
+agents:
+  backend: mock
+  specs:
+    - {id: m_good, variant: default, accuracy: 0.9}
+    - {id: m_mid, variant: cautious, accuracy: 0.6}
+    - {id: m_pers, variant: persuasive, accuracy: 0.3, justification_len: 400, confidence: 0.95}
+arbiter: {name: cca_ts, params: {w_delayed: 0.25}}
+trigger: {name: always}
+judge: {kind: heuristic}
+replay: {K: 2, horizon: 30, mock_accuracy: 1.0}

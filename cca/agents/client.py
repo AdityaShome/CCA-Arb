@@ -24,6 +24,8 @@ class ChatClient:
     def __init__(self, spec: ModelSpec, logger: JsonlLogger | None = None):
         from openai import OpenAI  # lazy so tests need no server
         self.spec, self.logger = spec, logger
+        self.in_tokens = 0
+        self.out_tokens = 0
         self._c = OpenAI(base_url=spec.base_url, api_key=spec.api_key)
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
@@ -34,6 +36,8 @@ class ChatClient:
             max_tokens=s.max_tokens, seed=seed)
         dt = time.time() - t0
         u = r.usage
+        self.in_tokens += u.prompt_tokens
+        self.out_tokens += u.completion_tokens
         if self.logger:
             cost = (u.prompt_tokens * s.usd_per_1k_in
                     + u.completion_tokens * s.usd_per_1k_out) / 1000

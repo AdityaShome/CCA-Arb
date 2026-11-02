@@ -1,0 +1,26 @@
+# E1 template (H1): copy per arbiter, set arbiter.name in
+# {majority, acceptance_rep, drf, rr, bda, oracle, cca_ts, cca_linucb}. Fill model names/URLs after serving.
+run: {name: e1_RETAIL_ARBITER, seeds: [0, 1, 2, 3, 4], task_ids: [], max_steps: 30}   # task_ids: fill dev split ids
+env: {domain: retail, split: dev, user: llm, user_model: FILL_ME, user_provider: FILL_ME}
+models:
+  qwen:  {name: Qwen/Qwen2.5-7B-Instruct, base_url: "http://localhost:8000/v1", temperature: 0.7}
+  llama: {name: meta-llama/Llama-3.1-8B-Instruct, base_url: "http://localhost:8001/v1", temperature: 0.7}
+agents:
+  backend: vllm
+  specs:
+    - {id: qwen_default,  model: qwen,  variant: default}
+    - {id: llama_default, model: llama, variant: default}
+    - {id: qwen_cautious, model: qwen,  variant: cautious}
+    - {id: llama_tools,   model: llama, variant: tool_heavy}
+    - {id: qwen_pers,     model: qwen,  variant: persuasive}      # H2 only; remove for pure E1
+arbiter: {name: cca_ts, params: {w_delayed: 0.25, credit: y}}
+trigger: {name: always}
+judge: {kind: heuristic}      # swap to {kind: llm, model: qwen} for the real acceptance-bias baseline
+replay:
+  K: 3
+  horizon: 40
+  continuation_agents:         # fixed mu: majority vote of these, frozen seeds
+    - {id: mu_qwen,  model: qwen,  variant: default}
+    - {id: mu_llama, model: llama, variant: default}
+    - {id: mu_qwen2, model: qwen,  variant: cautious}
+cost: {usd_per_gpu_hour: 0.0}   # set from your Colab/VM pricing

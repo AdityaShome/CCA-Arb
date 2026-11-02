@@ -116,10 +116,47 @@ class TauBenchEnv(BaseEnv):
         })
 
     def verify(self) -> float:
+        """Reward of the current state, computed on a copy with a null user.
+
+        Only valid while the episode is NOT done: when step() returns done, tau-bench
+        has already run calculate_reward() and overwritten env.data. Use the reward
+        returned by that final step() instead (Session.outcome does this).
+        """
         e = self._env
         saved = (e.data, e.actions, e.user)
         try:
             e.data, e.actions = copy.deepcopy(e.data), copy.deepcopy(e.actions)
+            e.user = _NullUser()
             return float(e.calculate_reward().reward)
         finally:
             e.data, e.actions, e.user = saved
+
+    # --- helpers for agents --------------------------------------------------
+    @property
+    def policy(self) -> str:
+        return self._env.wiki
+
+    @property
+    def tools_desc(self) -> str:
+        out = []
+        for t in self._env.tools_info:
+            f = t["function"]
+            out.append(f"- {f['name']}: {f.get('description','')} "
+                       f"params={json.dumps(f.get('parameters',{}).get('properties',{}))}")
+        out.append('- respond: send a message to the user; args={"content": "<text>"}')
+        return "\n".join(out)
+
+    @property
+    def gt_actions(self):
+        return self._env.task.actions
+
+
+class _NullUser:
+    """User stub used only inside verify(): never calls an LLM."""
+    messages: list = []
+
+    def step(self, content):
+        return ""
+
+    def get_total_cost(self):
+        return 0.0
